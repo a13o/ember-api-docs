@@ -13,9 +13,13 @@ export default class SearchInput extends Component {
   @tracked query = '';
   @tracked _focused = false;
 
+  @service('project') projectService;
   @service('search') searchService;
 
   _resultTetherConstraints = null;
+
+  /** @type {?string} */
+  _lastQueriedProjectVersion = null;
 
   constructor() {
     super(...arguments);
@@ -46,6 +50,7 @@ export default class SearchInput extends Component {
     // ensure search results are visible if the menu was previously closed above
     this._focused = true;
 
+    this._lastQueriedProjectVersion = this.projectService.version;
     yield get(this, 'searchService.search').perform(query);
   }
 
@@ -56,6 +61,15 @@ export default class SearchInput extends Component {
   }
 
   @action onfocus() {
+    const hasStaleResults =
+      this._lastQueriedProjectVersion !== null
+      && this.query.length > 0
+      && this.projectService.version !== this._lastQueriedProjectVersion;
+    
+    if (hasStaleResults) {
+      this.search.perform(this.query);
+    }
+
     this._focused = true;
   }
 
